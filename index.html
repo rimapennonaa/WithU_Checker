@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>WithUチェッカー</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; background: #fff0f5; padding: 10px; margin: 0; box-sizing: border-box; }
+        
+        /* コンテナの幅を画面に合わせる */
+        .container { width: 100%; max-width: 600px; margin: 0 auto; }
+        
+        /* グリッドを画面からはみ出さないように設定 */
+        .grid { 
+            display: grid; 
+            gap: 10px; 
+            justify-content: center; 
+            margin: 15px auto; 
+            padding: 0 5px;
+            box-sizing: border-box;
+        }
+        
+        /* 画像サイズを画面幅に合わせて自動調整 */
+        .grid img { 
+            width: 100%; 
+            max-width: 120px; 
+            aspect-ratio: 1/1; 
+            object-fit: cover; 
+            cursor: pointer; 
+            border: 4px solid white; 
+            border-radius: 12px; 
+            display: block; 
+            box-sizing: border-box; 
+            transition: filter 0.3s, border 0.3s; 
+        }
+        
+        .item-wrapper { display: flex; flex-direction: column; align-items: center; }
+        .grid img.selected { border: 4px solid #ff69b4; }
+        .grid img.dimmed { filter: brightness(0.6); }
+        .grid img.correct-border { border: 4px solid #44ff44 !important; }
+        .grid img.wrong-border { border: 4px solid #ff4444 !important; }
+        
+        .mv-label { font-size: 11px; color: #555; margin-top: 5px; display: none; font-weight: bold; }
+        .mv-area-wrapper { margin: 20px auto; padding-top: 20px; border-top: 3px solid #ffb6c1; display: none; width: 100%; box-sizing: border-box; }
+        
+        button { padding: 10px 20px; font-size: 14px; border-radius: 20px; border: none; background: #ff69b4; color: white; cursor: pointer; margin: 5px; }
+        
+        #result-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 1000; }
+        #result-content { background: white; padding: 20px; border-radius: 20px; width: 90%; max-width: 400px; box-sizing: border-box; }
+        #res-img { width: 90%; max-width: 450px; margin: 45px auto; display: block; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="home-screen">
+            <h1>WithUチェッカー</h1>
+            <button onclick="startGame('easy')">かんたん</button>
+            <button onclick="startGame('normal')">ふつう</button>
+            <button onclick="startGame('hard')">むずかしい</button>
+            <hr>
+            <button onclick="startTA()" style="background: #ff4444;">タイムアタック</button>
+        </div>
+
+        <div id="game-screen" style="display: none;">
+            <div id="ta-info" style="display: none;">タイム: <span id="timer">0</span>秒 | 正解数: <span id="ta-count">0</span>/5</div>
+            <h2 id="q-text"></h2>
+            <div id="grid" class="grid"></div>
+            <div id="controls">
+                <button id="hint-btn" onclick="showHint()">ヒント</button>
+                <button id="check-btn" onclick="check()">判定する！</button>
+            </div>
+            <div id="after-check-controls" class="mv-area-wrapper">
+                <div id="mv-info"></div>
+                <button onclick="location.reload()">難易度選択に戻る</button>
+                <button onclick="startGame(mode)">もう一度</button>
+            </div>
+        </div>
+
+
+    <div id="result-overlay">
+        <div id="result-content">
+            <h2 id="msg"></h2>
+            <img id="res-img" src="">
+            <button onclick="closeResult()">閉じる</button>
+        </div>
+    </div>
+
+    <script>
+        const imageList = [            { src: 'images/HEARTRIS/Screenshot_20260707-114848.png', mv: 'HEARTRIS' },
+            { src: 'images/HEARTRIS/Screenshot_20260707-114855.png', mv: 'HEARTRIS' },
+            { src: 'images/HEARTRIS/Screenshot_20260707-114907.png', mv: 'HEARTRIS' },
+            { src: 'images/HEARTRIS/Screenshot_20260707-114917.png', mv: 'HEARTRIS' },
+            { src: 'images/HEARTRIS/Screenshot_20260707-114928.png', mv: 'HEARTRIS' },
+            { src: 'images/HEARTRIS/Screenshot_20260707-114932.png', mv: 'HEARTRIS' },
+            { src: 'images/HEARTRIS/Screenshot_20260707-114953.png', mv: 'HEARTRIS' },
+            { src: 'images/HEARTRIS/Screenshot_20260707-114958.png', mv: 'HEARTRIS' },
+            { src: 'images/HEARTRIS/Screenshot_20260707-115001.png', mv: 'HEARTRIS' },
+            { src: 'images/HEARTRIS/Screenshot_20260707-115012.png', mv: 'HEARTRIS' },
+            { src: 'images/HEARTRIS/Screenshot_20260707-115025.png', mv: 'HEARTRIS' },
+            { src: 'images/HEARTRIS/Screenshot_20260707-115031.png', mv: 'HEARTRIS' },
+            { src: 'images/HEARTRIS/Screenshot_20260707-115106.png', mv: 'HEARTRIS' },
+            { src: 'images/HEARTRIS/Screenshot_20260707-115136.png', mv: 'HEARTRIS' },
+            { src: 'images/HEARTRIS/Screenshot_20260707-211338.png', mv: 'HEARTRIS' },
+            { src: 'images/HEARTRIS/Screenshot_20260707-211400.png', mv: 'HEARTRIS' },
+            { src: 'images/HEARTRIS/Screenshot_20260707-211415.png', mv: 'HEARTRIS' },
+            { src: 'images/HEARTRIS/Screenshot_20260707-211504.png', mv: 'HEARTRIS' },
+            { src: 'images/HEARTRIS/Screenshot_20260707-211530.png', mv: 'HEARTRIS' },
+            { src: 'images/HEARTRIS/Screenshot_20260707-211548.png', mv: 'HEARTRIS' },
+            { src: 'images/Make_you_happy/Screenshot_20260707-114449.png', mv: 'Make_you_happy' },
+            { src: 'images/Make_you_happy/Screenshot_20260707-114501.png', mv: 'Make_you_happy' },
+            { src: 'images/Make_you_happy/Screenshot_20260707-114516.png', mv: 'Make_you_happy' },
+            { src: 'images/Make_you_happy/Screenshot_20260707-114528.png', mv: 'Make_you_happy' },
+            { src: 'images/Make_you_happy/Screenshot_20260707-114543.png', mv: 'Make_you_happy' },
+            { src: 'images/Make_you_happy/Screenshot_20260707-114559.png', mv: 'Make_you_happy' },
+            { src: 'images/Make_you_happy/Screenshot_20260707-114610.png', mv: 'Make_you_happy' },
+            { src: 'images/Make_you_happy/Screenshot_20260707-114620.png', mv: 'Make_you_happy' },
+            { src: 'images/Make_you_happy/Screenshot_20260707-114639.png', mv: 'Make_you_happy' },
+            { src: 'images/Make_you_happy/Screenshot_20260707-114653.png', mv: 'Make_you_happy' },
+            { src: 'images/Make_you_happy/Screenshot_20260707-114711.png', mv: 'Make_you_happy' },
+            { src: 'images/Make_you_happy/Screenshot_20260707-114751.png', mv: 'Make_you_happy' },
+            { src: 'images/Make_you_happy/Screenshot_20260707-210807.png', mv: 'Make_you_happy' },
+            { src: 'images/Make_you_happy/Screenshot_20260707-210915.png', mv: 'Make_you_happy' },
+            { src: 'images/Make_you_happy/Screenshot_20260707-210943.png', mv: 'Make_you_happy' },
+            { src: 'images/Make_you_happy/Screenshot_20260707-210955.png', mv: 'Make_you_happy' },
+            { src: 'images/Make_you_happy/Screenshot_20260707-211010.png', mv: 'Make_you_happy' },
+            { src: 'images/Make_you_happy/Screenshot_20260707-211050.png', mv: 'Make_you_happy' },
+            { src: 'images/Make_you_happy/Screenshot_20260707-211104.png', mv: 'Make_you_happy' },
+            { src: 'images/Make_you_happy/Screenshot_20260707-222932.png', mv: 'Make_you_happy' },
+            { src: 'images/Step_and_a_step/Screenshot_20260707-211755.png', mv: 'Step_and_a_step' },
+            { src: 'images/Step_and_a_step/Screenshot_20260707-211811.png', mv: 'Step_and_a_step' },
+            { src: 'images/Step_and_a_step/Screenshot_20260707-211818.png', mv: 'Step_and_a_step' },
+            { src: 'images/Step_and_a_step/Screenshot_20260707-211823.png', mv: 'Step_and_a_step' },
+            { src: 'images/Step_and_a_step/Screenshot_20260707-211830.png', mv: 'Step_and_a_step' },
+            { src: 'images/Step_and_a_step/Screenshot_20260707-211848.png', mv: 'Step_and_a_step' },
+            { src: 'images/Step_and_a_step/Screenshot_20260707-211852.png', mv: 'Step_and_a_step' },
+            { src: 'images/Step_and_a_step/Screenshot_20260707-211905.png', mv: 'Step_and_a_step' },
+            { src: 'images/Step_and_a_step/Screenshot_20260707-211936.png', mv: 'Step_and_a_step' },
+            { src: 'images/Step_and_a_step/Screenshot_20260707-211951.png', mv: 'Step_and_a_step' },
+            { src: 'images/Step_and_a_step/Screenshot_20260707-212026.png', mv: 'Step_and_a_step' },
+            { src: 'images/Step_and_a_step/Screenshot_20260707-212047.png', mv: 'Step_and_a_step' },
+            { src: 'images/Step_and_a_step/Screenshot_20260707-212120.png', mv: 'Step_and_a_step' },
+            { src: 'images/Step_and_a_step/Screenshot_20260707-212438.png', mv: 'Step_and_a_step' },
+            { src: 'images/Step_and_a_step/Screenshot_20260707-212520.png', mv: 'Step_and_a_step' },
+            { src: 'images/Step_and_a_step/Screenshot_20260707-212609.png', mv: 'Step_and_a_step' },
+            { src: 'images/Step_and_a_step/Screenshot_20260707-212623.png', mv: 'Step_and_a_step' },
+            { src: 'images/Step_and_a_step/Screenshot_20260707-212654.png', mv: 'Step_and_a_step' },
+            { src: 'images/Step_and_a_step/Screenshot_20260707-212659.png', mv: 'Step_and_a_step' },
+            { src: 'images/Step_and_a_step/Screenshot_20260707-212720.png', mv: 'Step_and_a_step' },
+            { src: 'images/Take_a_picture/Screenshot_20260707-212952.png', mv: 'Take_a_picture' },
+            { src: 'images/Take_a_picture/Screenshot_20260707-212959.png', mv: 'Take_a_picture' },
+            { src: 'images/Take_a_picture/Screenshot_20260707-213014.png', mv: 'Take_a_picture' },
+            { src: 'images/Take_a_picture/Screenshot_20260707-213037.png', mv: 'Take_a_picture' },
+            { src: 'images/Take_a_picture/Screenshot_20260707-213044.png', mv: 'Take_a_picture' },
+            { src: 'images/Take_a_picture/Screenshot_20260707-213058.png', mv: 'Take_a_picture' },
+            { src: 'images/Take_a_picture/Screenshot_20260707-213114.png', mv: 'Take_a_picture' },
+            { src: 'images/Take_a_picture/Screenshot_20260707-213136.png', mv: 'Take_a_picture' },
+            { src: 'images/Take_a_picture/Screenshot_20260707-213140.png', mv: 'Take_a_picture' },
+            { src: 'images/Take_a_picture/Screenshot_20260707-213147.png', mv: 'Take_a_picture' },
+            { src: 'images/Take_a_picture/Screenshot_20260707-213153.png', mv: 'Take_a_picture' },
+            { src: 'images/Take_a_picture/Screenshot_20260707-213159.png', mv: 'Take_a_picture' },
+            { src: 'images/Take_a_picture/Screenshot_20260707-213209.png', mv: 'Take_a_picture' },
+            { src: 'images/Take_a_picture/Screenshot_20260707-213229.png', mv: 'Take_a_picture' },
+            { src: 'images/Take_a_picture/Screenshot_20260707-213235.png', mv: 'Take_a_picture' },
+            { src: 'images/Take_a_picture/Screenshot_20260707-213247.png', mv: 'Take_a_picture' },
+            { src: 'images/Take_a_picture/Screenshot_20260707-213254.png', mv: 'Take_a_picture' },
+            { src: 'images/Take_a_picture/Screenshot_20260707-213328.png', mv: 'Take_a_picture' },
+            { src: 'images/Take_a_picture/Screenshot_20260707-213340.png', mv: 'Take_a_picture' },
+            { src: 'images/Take_a_picture/Screenshot_20260707-213345.png', mv: 'Take_a_picture' },
+            { src: 'images/Too_Bad/Screenshot_20260707-113958.png', mv: 'Too_Bad' },
+            { src: 'images/Too_Bad/Screenshot_20260707-114022.png', mv: 'Too_Bad' },
+            { src: 'images/Too_Bad/Screenshot_20260707-114048.png', mv: 'Too_Bad' },
+            { src: 'images/Too_Bad/Screenshot_20260707-114059.png', mv: 'Too_Bad' },
+            { src: 'images/Too_Bad/Screenshot_20260707-114117.png', mv: 'Too_Bad' },
+            { src: 'images/Too_Bad/Screenshot_20260707-114124.png', mv: 'Too_Bad' },
+            { src: 'images/Too_Bad/Screenshot_20260707-114129.png', mv: 'Too_Bad' },
+            { src: 'images/Too_Bad/Screenshot_20260707-114141.png', mv: 'Too_Bad' },
+            { src: 'images/Too_Bad/Screenshot_20260707-114236.png', mv: 'Too_Bad' },
+            { src: 'images/Too_Bad/Screenshot_20260707-114250.png', mv: 'Too_Bad' },
+            { src: 'images/Too_Bad/Screenshot_20260707-114308.png', mv: 'Too_Bad' },
+            { src: 'images/Too_Bad/Screenshot_20260707-114316.png', mv: 'Too_Bad' },
+            { src: 'images/Too_Bad/Screenshot_20260707-114327.png', mv: 'Too_Bad' },
+            { src: 'images/Too_Bad/Screenshot_20260707-114344.png', mv: 'Too_Bad' },
+            { src: 'images/Too_Bad/Screenshot_20260707-210435.png', mv: 'Too_Bad' },
+            { src: 'images/Too_Bad/Screenshot_20260707-210444.png', mv: 'Too_Bad' },
+            { src: 'images/Too_Bad/Screenshot_20260707-210600.png', mv: 'Too_Bad' },
+            { src: 'images/Too_Bad/Screenshot_20260707-210637.png', mv: 'Too_Bad' },
+            { src: 'images/Too_Bad/Screenshot_20260707-222613.png', mv: 'Too_Bad' },
+            { src: 'images/Too_Bad/Screenshot_20260707-222635.png', mv: 'Too_Bad' },]; 
+const mvData = {            'HEARTRIS': { url: 'https://youtu.be/gRfDY9WrGwk', thumb: 'images/thumbnails/thumb_heartris.jpg' },
+            'Make_you_happy': { url: 'https://youtu.be/QW28YKqdxe0', thumb: 'images/thumbnails/thumb_myh.jpg' },
+            'Too_Bad': { url: 'https://youtu.be/b_GqrwmptWo', thumb: 'images/thumbnails/thumb_toobad.jpg' },
+            'Step_and_a_step': { url: 'https://youtu.be/a6QT0acJFQE', thumb: 'images/thumbnails/thumb_stepandastep.jpg' },
+            'Take_a_picture': { url: 'https://youtu.be/OlHb1qH-zS4', thumb: 'images/thumbnails/thumb_takeapicture.jpg' }};
+        let mode = '', currentTarget = '', taCount = 0, startTime = 0, timerInterval = null;
+
+        function getGridCols() {
+            if (mode === 'easy') return 2;
+            if (mode === 'hard' || mode === 'ta') return 4;
+            return window.innerWidth >= 600 ? 4 : 3;
+        }
+
+        function startGame(m) {
+            mode = m;
+            document.getElementById('home-screen').style.display = 'none';
+            document.getElementById('game-screen').style.display = 'block';
+            document.getElementById('after-check-controls').style.display = 'none';
+            document.getElementById('check-btn').style.display = 'inline-block';
+            document.getElementById('hint-btn').style.display = (mode === 'ta') ? 'none' : 'inline-block';
+            setupRound();
+        }
+
+        function startTA() {
+            mode = 'ta'; taCount = 0;
+            document.getElementById('ta-info').style.display = 'block';
+            startTime = Date.now();
+            timerInterval = setInterval(() => document.getElementById('timer').innerText = Math.floor((Date.now() - startTime) / 1000), 1000);
+            startGame('ta');
+        }
+
+        function setupRound() {
+            const mvs = Object.keys(mvData);
+            currentTarget = mvs[Math.floor(Math.random() * mvs.length)];
+            const cols = getGridCols();
+            const total = (mode === 'easy' ? 4 : (mode === 'normal' || mode === 'ta' ? 12 : 16));
+            
+            const limits = { 'easy': [1,2], 'normal': [5,8], 'hard': [7,10], 'ta': [5,8] };
+            const [min, max] = limits[mode];
+            const corrects = imageList.filter(i => i.mv === currentTarget);
+            const others = imageList.filter(i => i.mv !== currentTarget);
+            const cCount = Math.min(Math.floor(Math.random() * (max - min + 1)) + min, corrects.length);
+            const gameData = [...corrects.sort(()=>0.5-Math.random()).slice(0, cCount), ...others.sort(()=>0.5-Math.random()).slice(0, total - cCount)].sort(()=>0.5-Math.random());
+
+            const grid = document.getElementById('grid');
+            grid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+            grid.innerHTML = '';
+            document.getElementById('q-text').innerText = `${currentTarget} のシーンを全てを選んでね！`;
+            
+            gameData.forEach(img => {
+                const div = document.createElement('div');
+                div.className = 'item-wrapper';
+                div.innerHTML = `<img src="${img.src}" onclick="this.classList.toggle('selected')" data-mv="${img.mv}"><div class="mv-label">${img.mv}</div>`;
+                grid.appendChild(div);
+            });
+        }
+
+        function check() {
+            let allCorrect = true;
+            document.querySelectorAll('.grid img').forEach(img => {
+                const isSelected = img.classList.contains('selected');
+                const isCorrect = img.dataset.mv === currentTarget;
+                if ((isSelected && !isCorrect) || (!isSelected && isCorrect)) allCorrect = false;
+                
+                if (mode !== 'ta') {
+                    // 【修正点】選択した画像だけにdimmedを適用
+                    if (isSelected) img.classList.add('dimmed');
+                    
+                    if (isCorrect) img.classList.add('correct-border');
+                    else if (isSelected) img.classList.add('wrong-border');
+                }
+            });
+
+            if (mode === 'ta') {
+                if (allCorrect) taCount++;
+                document.getElementById('ta-count').innerText = taCount;
+                if (taCount >= 5) {
+                    clearInterval(timerInterval);
+                    document.getElementById('msg').innerText = `お疲れ様です！今回の記録は ${document.getElementById('timer').innerText}秒 です！`;
+                    document.getElementById('res-img').src = 'result/correct.png';
+                } else {
+                    document.getElementById('msg').innerText = allCorrect ? "正解！" : "不正解...";
+                    document.getElementById('res-img').src = allCorrect ? 'result/correct.png' : 'result/wrong.png';
+                }
+                document.getElementById('result-overlay').style.display = 'flex';
+            } else {
+                document.getElementById('msg').innerText = allCorrect ? "大正解！あなたは真のWithUです！！" : "残念！WithUの底力、こんなもんじゃないですよね？";
+                document.getElementById('res-img').src = allCorrect ? 'result/correct.png' : 'result/wrong.png';
+                document.getElementById('result-overlay').style.display = 'flex';
+                document.querySelectorAll('.mv-label').forEach(el => el.style.display = 'block');
+                document.getElementById('mv-info').innerHTML = `<h3>↓ ${currentTarget} のMVはこちら！！ ↓</h3><a href="${mvData[currentTarget].url}" target="_blank"><img src="${mvData[currentTarget].thumb}" style="width:100%; max-width:300px; border-radius:15px; box-shadow:0 4px 8px rgba(0,0,0,0.2);"></a>`;
+                document.getElementById('after-check-controls').style.display = 'block';
+                document.getElementById('check-btn').style.display = 'none';
+            }
+        }
+
+        function showHint() { alert(`今回の正解は ${document.querySelectorAll('.grid img[data-mv="' + currentTarget + '"]').length} 枚です！`); }
+        function closeResult() {
+            document.getElementById('result-overlay').style.display = 'none';
+            if (mode === 'ta' && taCount >= 5) location.reload();
+            else if (mode === 'ta') setupRound();
+        }
+    </script>
+</body>
+</html>
