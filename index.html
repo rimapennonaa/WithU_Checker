@@ -310,15 +310,15 @@ const mvData = {            'HEARTRIS': { url: 'https://youtu.be/gRfDY9WrGwk', t
                 if (taCount >= 5) {
                     clearInterval(timerInterval);
                     document.getElementById('msg').innerText = `お疲れ様です！今回の記録は ${document.getElementById('timer').innerText}秒 です！`;
-                    document.getElementById('res-img').src = 'result/correct.PNG';
+                    document.getElementById('res-img').src = 'result/correct.png';
                 } else {
                     document.getElementById('msg').innerText = allCorrect ? "正解！" : "不正解...";
-                    document.getElementById('res-img').src = allCorrect ? 'result/correct.PNG' : 'result/wrong.PNG';
+                    document.getElementById('res-img').src = allCorrect ? 'result/correct.png' : 'result/wrong.png';
                 }
                 document.getElementById('result-overlay').style.display = 'flex';
             } else {
                 document.getElementById('msg').innerText = allCorrect ? "大正解！あなたは真のWithUです！！" : "残念！WithUの底力、こんなもんじゃないですよね？";
-                document.getElementById('res-img').src = allCorrect ? 'result/correct.PNG' : 'result/wrong.PNG';
+                document.getElementById('res-img').src = allCorrect ? 'result/correct.png' : 'result/wrong.png';
                 document.getElementById('result-overlay').style.display = 'flex';
                 document.querySelectorAll('.mv-label').forEach(el => el.style.display = 'block');
                 document.getElementById('mv-info').innerHTML = `<h3>↓ ${currentTarget} のMVはこちら！！ ↓</h3><a href="${mvData[currentTarget].url}" target="_blank"><img src="${mvData[currentTarget].thumb}" style="width:100%; max-width:300px; border-radius:15px; box-shadow:0 4px 8px rgba(0,0,0,0.2);"></a>`;
