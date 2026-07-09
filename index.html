@@ -245,27 +245,36 @@
         }
 
         function setupRound() {
-            const mvs = Object.keys(mvData);
-            currentTarget = mvs[Math.floor(Math.random() * mvs.length)];
-            const cols = getGridCols();
-            const total = (mode === 'easy' ? 4 : (mode === 'normal' || mode === 'ta' ? 12 : 16));
-            const limits = { 'easy': [1,2], 'normal': [5,8], 'hard': [7,10], 'ta': [5,8] };
-            const [min, max] = limits[mode];
-            const corrects = imageList.filter(i => i.mv === currentTarget).sort(()=>0.5-Math.random());
-            const others = imageList.filter(i => i.mv !== currentTarget).sort(()=>0.5-Math.random());
-            const cCount = Math.min(Math.floor(Math.random() * (max - min + 1)) + min, corrects.length);
-            const gameData = [...corrects.slice(0, cCount), ...others.slice(0, total - cCount)].sort(()=>0.5-Math.random());
+    const mvs = Object.keys(mvData);
+    currentTarget = mvs[Math.floor(Math.random() * mvs.length)];
+    
+    // 1. 重複を除去したユニークな画像リストを作成
+    const uniqueImages = [...new Map(imageList.map(item => [item.src, item])).values()];
+    
+    // 2. ユニークなリストから分類とシャッフルを行う
+    const corrects = uniqueImages.filter(i => i.mv === currentTarget).sort(() => 0.5 - Math.random());
+    const others = uniqueImages.filter(i => i.mv !== currentTarget).sort(() => 0.5 - Math.random());
+    
+    const cols = getGridCols();
+    const total = (mode === 'easy' ? 4 : (mode === 'normal' || mode === 'ta' ? 12 : 16));
+    const limits = { 'easy': [1,2], 'normal': [5,8], 'hard': [7,10], 'ta': [5,8] };
+    const [min, max] = limits[mode];
+    
+    // 3. 正解数を決定し、データを生成
+    const cCount = Math.min(Math.floor(Math.random() * (max - min + 1)) + min, corrects.length);
+    const gameData = [...corrects.slice(0, cCount), ...others.slice(0, total - cCount)].sort(() => 0.5 - Math.random());
 
-            const grid = document.getElementById('grid');
-            grid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
-            grid.innerHTML = '';
-            document.getElementById('q-text').innerText = `${currentTarget} のシーンを全て選んでね！`;
-            gameData.forEach(img => {
-                const div = document.createElement('div');
-                div.className = 'item-wrapper';
-                div.innerHTML = `<img src="${img.src}" onclick="this.classList.toggle('selected')" data-mv="${img.mv}"><div class="mv-label" style="display:none;">${img.mv}</div>`;
-                grid.appendChild(div);
-            });
+    const grid = document.getElementById('grid');
+    grid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+    grid.innerHTML = '';
+    document.getElementById('q-text').innerText = `${currentTarget} のシーンを全て選んでね！`;
+    
+    gameData.forEach(img => {
+        const div = document.createElement('div');
+        div.className = 'item-wrapper';
+        div.innerHTML = `<img src="${img.src}" onclick="this.classList.toggle('selected')" data-mv="${img.mv}"><div class="mv-label" style="display:none;">${img.mv}</div>`;
+        grid.appendChild(div);
+    });
         }
 
        function check() {
@@ -293,7 +302,7 @@
             const isFast = finalTime <= 60;
             const comment = isFast ? "すごい生粋のWithUだ！！" : "まだ上を目指せるんじゃない？";
             document.getElementById('msg').innerText = `${nickname}さんの結果は ${finalTime}秒！！\n(${now})\n\n${comment}`;
-            document.getElementById('res-img').src = 'result/correct.png';
+          const resultImg = isFast ? 'result/correct_fast.png' : 'result/correct_normal.png';
             
             const snsArea = document.getElementById('sns-area');
             snsArea.style.display = 'block';
@@ -302,7 +311,7 @@
         } else {
             // 【ここが修正箇所です】
             document.getElementById('msg').innerText = (allCorrect ? "正解！" : "不正解...") + `\n\n現在の正解数: ${taCount}/5`;
-            document.getElementById('res-img').src = allCorrect ? 'result/correct.png' : 'result/wrong.png';
+            document.getElementById('res-img').src = allCorrect ? 'result/seikai.png' : 'result/zannen.png';
         }
     } else {
         // 通常プレイの判定表示
