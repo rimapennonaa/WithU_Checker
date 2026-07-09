@@ -307,7 +307,7 @@
             
             const snsArea = document.getElementById('sns-area');
             snsArea.style.display = 'block';
-            const shareText = encodeURIComponent(`${nickname}のWithUチェッカーのタイムは ${finalTime}秒！ ${comment} #NiziU #WithU https://rimapennonaa.github.io/WithU_Checker/`);
+            const shareText = encodeURIComponent(`${nickname}のWithUチェッカーのタイムは ${finalTime}秒！ ${comment} #NiziU #WithU #WithUチェッカー \n https://rimapennonaa.github.io/WithU_Checker/`);
             snsArea.innerHTML = `<button style="background:#000;" onclick="window.open('https://twitter.com/intent/tweet?text=${shareText}')">Xでシェアする</button>`;
         } else {
             // 【ここが修正箇所です】
