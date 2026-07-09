@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>WithUチェッカー</title>
     <style>
+        #msg { white-space: pre-wrap; }
         body { font-family: sans-serif; text-align: center; background: #fff0f5; padding: 10px; margin: 0; }
         .container { max-width: 600px; margin: 0 auto; }
         .grid { display: grid; gap: 10px; justify-content: center; margin: 15px auto; }
@@ -19,7 +20,7 @@
         button { padding: 10px 20px; border-radius: 20px; border: none; background: #ff69b4; color: white; cursor: pointer; margin: 5px; }
         #result-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 1000; }
         #result-content { background: white; padding: 20px; border-radius: 20px; width: 80%; max-width: 400px; display: flex; flex-direction: column; align-items: center; }
-        #res-img { width: 100%; margin: 20px; }
+        #res-img { width: 100%; margin: 10px; }
     </style>
 </head>
 <body>
@@ -30,7 +31,11 @@
             <button onclick="startGame('normal')">ふつう(12マス)</button>
             <button onclick="startGame('hard')">むずかしい(16マス)</button>
             <hr>
-            <button onclick="startTA()" style="background: #ff4444;">タイムアタック(12マスで5回正解するまでのタイムを測定するよ!)</button>
+            <div>
+                <input type="text" id="nickname" placeholder="ニックネームを入力" style="padding: 10px; border-radius: 10px; border: 1px solid #ccc;">
+                <br>
+                <button onclick="startTA()" style="background: #ff4444;">タイムアタック開始！(12マスを5回正解するタイムを測定するよ!)</button>
+            </div>
         </div>
 
         <div id="game-screen" style="display: none;">
@@ -39,7 +44,7 @@
             <div id="grid" class="grid"></div>
             <div id="controls">
                 <button id="hint-btn" onclick="showHint()">ヒント</button>
-                <button id="home-btn" onclick="location.reload()" style="display:none;">ホームに戻る</button>
+                <button id="home-btn" onclick="location.reload()" style="display:none; background:#888;">ホームに戻る</button>
                 <button id="check-btn" onclick="check()">判定する！</button>
             </div>
             <div id="mv-area">
@@ -54,6 +59,7 @@
         <div id="result-content">
             <h2 id="msg"></h2>
             <img id="res-img" src="">
+            <div id="sns-area" style="display:none;"></div>
             <button onclick="closeResult()">閉じる</button>
         </div>
     </div>
@@ -209,7 +215,7 @@
 'Chopstick': { url: 'https://youtu.be/nCjmXHsRJNY?si=S6BeEpqBHuMw3EqR', thumb: 'thumbnails/thumb_Chopstick.jpg' },
 'Poppin_Shakin': { url: 'https://youtu.be/mgYnKfgx6tI?si=4Qxmha2PFgtb9D77', thumb: 'thumbnails/tumb_Poppin.jpg' }};
 
-        let mode = '', currentTarget = '', taCount = 0, startTime = 0, timerInterval = null;
+        let mode = '', currentTarget = '', taCount = 0, startTime = 0, timerInterval = null, nickname = '';
 
         function getGridCols() {
             if (mode === 'easy') return 2;
@@ -218,6 +224,7 @@
         }
 
         function startTA() {
+            nickname = document.getElementById('nickname').value || '名無しWithU';
             mode = 'ta'; taCount = 0; startTime = Date.now();
             document.getElementById('ta-count').innerText = '0';
             document.getElementById('ta-info').style.display = 'block';
@@ -253,7 +260,6 @@
             grid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
             grid.innerHTML = '';
             document.getElementById('q-text').innerText = `${currentTarget} のシーンを全て選んでね！`;
-            
             gameData.forEach(img => {
                 const div = document.createElement('div');
                 div.className = 'item-wrapper';
@@ -262,41 +268,54 @@
             });
         }
 
-        function check() {
-            let allCorrect = true;
-            document.querySelectorAll('.grid img').forEach(img => {
-                const isSelected = img.classList.contains('selected');
-                const isCorrect = img.dataset.mv === currentTarget;
-                if ((isSelected && !isCorrect) || (!isSelected && isCorrect)) allCorrect = false;
-                if (mode !== 'ta') {
-                    if (isSelected) img.classList.add('dimmed');
-                    if (isCorrect) img.classList.add('correct-border');
-                    else if (isSelected) img.classList.add('wrong-border');
-                }
-            });
-
-            if (mode === 'ta') {
-                if (allCorrect) taCount++;
-                document.getElementById('ta-count').innerText = taCount;
-                if (taCount >= 5) {
-                    clearInterval(timerInterval);
-                    document.getElementById('msg').innerText = `お疲れ様です！今回の記録は ${document.getElementById('timer').innerText}秒 です！`;
-                    document.getElementById('res-img').src = 'result/correct.png';
-                } else {
-                    document.getElementById('msg').innerText = allCorrect ? "正解！" : "不正解...";
-                    document.getElementById('res-img').src = allCorrect ? 'result/correct.png' : 'result/wrong.png';
-                }
-            } else {
-                document.getElementById('msg').innerText = allCorrect ? "大正解！あなたは真のWithUです！！" : "残念！WithUの底力、こんなもんじゃないですよね？";
-                document.getElementById('res-img').src = allCorrect ? 'result/correct.png' : 'result/wrong.png';
-                document.querySelectorAll('.mv-label').forEach(el => el.style.display = 'block');
-                document.getElementById('mv-info').innerHTML = `<h3>↓ ${currentTarget} のMVはこちら！！ ↓</h3><a href="${mvData[currentTarget].url}" target="_blank"><img src="${mvData[currentTarget].thumb}" style="width:100%; max-width:500px;"></a>`;
-                document.getElementById('mv-area').style.display = 'block';
-                document.getElementById('check-btn').style.display = 'none';
-                document.getElementById('hint-btn').style.display = 'none';
-            }
-            document.getElementById('result-overlay').style.display = 'flex';
+       function check() {
+    let allCorrect = true;
+    document.querySelectorAll('.grid img').forEach(img => {
+        const isSelected = img.classList.contains('selected');
+        const isCorrect = img.dataset.mv === currentTarget;
+        if ((isSelected && !isCorrect) || (!isSelected && isCorrect)) allCorrect = false;
+        if (mode !== 'ta') {
+            if (isSelected) img.classList.add('dimmed');
+            if (isCorrect) img.classList.add('correct-border');
+            else if (isSelected) img.classList.add('wrong-border');
         }
+    });
+
+    document.getElementById('sns-area').style.display = 'none';
+    if (mode === 'ta') {
+        if (allCorrect) taCount++;
+        document.getElementById('ta-count').innerText = taCount;
+        
+        if (taCount >= 5) {
+            clearInterval(timerInterval);
+            const finalTime = document.getElementById('timer').innerText;
+            const now = new Date().toLocaleString();
+            const isFast = finalTime <= 60;
+            const comment = isFast ? "すごい生粋のWithUだ！！" : "まだ上を目指せるんじゃない？";
+            document.getElementById('msg').innerText = `${nickname}さんの結果は ${finalTime}秒！！\n(${now})\n\n${comment}`;
+            document.getElementById('res-img').src = 'result/correct.png';
+            
+            const snsArea = document.getElementById('sns-area');
+            snsArea.style.display = 'block';
+            const shareText = encodeURIComponent(`${nickname}のWithUチェッカーのタイムは ${finalTime}秒！ ${comment} #NiziU #WithU https://rimapennonaa.github.io/WithU_Checker/`);
+            snsArea.innerHTML = `<button style="background:#000;" onclick="window.open('https://twitter.com/intent/tweet?text=${shareText}')">Xでシェアする</button>`;
+        } else {
+            // 【ここが修正箇所です】
+            document.getElementById('msg').innerText = (allCorrect ? "正解！" : "不正解...") + `\n\n現在の正解数: ${taCount}/5`;
+            document.getElementById('res-img').src = allCorrect ? 'result/correct.png' : 'result/wrong.png';
+        }
+    } else {
+        // 通常プレイの判定表示
+        document.getElementById('msg').innerText = allCorrect ? "大正解！\nあなたは真のWithUです！！" : "残念！ WithUの底力、\nこんなもんじゃないですよね？";
+        document.getElementById('res-img').src = allCorrect ? 'result/correct.png' : 'result/wrong.png';
+        document.querySelectorAll('.mv-label').forEach(el => el.style.display = 'block');
+        document.getElementById('mv-info').innerHTML = `<h3>↓ ${currentTarget} のMVはこちら！！ ↓</h3><a href="${mvData[currentTarget].url}" target="_blank"><img src="${mvData[currentTarget].thumb}" style="width:100%; max-width:500px;"></a>`;
+        document.getElementById('mv-area').style.display = 'block';
+        document.getElementById('check-btn').style.display = 'none';
+        document.getElementById('hint-btn').style.display = 'none';
+    }
+    document.getElementById('result-overlay').style.display = 'flex';
+}
 
         function closeResult() {
             document.getElementById('result-overlay').style.display = 'none';
