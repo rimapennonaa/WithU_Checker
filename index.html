@@ -2,53 +2,24 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="google-site-verification" content="google-site-verification: google5ce4f0c1eac4ba6f" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>WithUチェッカー</title>
     <style>
-        body { font-family: sans-serif; text-align: center; background: #fff0f5; padding: 10px; margin: 0; box-sizing: border-box; }
-        
-        /* コンテナの幅を画面に合わせる */
-        .container { width: 100%; max-width: 600px; margin: 0 auto; }
-        
-        /* グリッドを画面からはみ出さないように設定 */
-        .grid { 
-            display: grid; 
-            gap: 10px; 
-            justify-content: center; 
-            margin: 15px auto; 
-            padding: 0 5px;
-            box-sizing: border-box;
-        }
-        
-        /* 画像サイズを画面幅に合わせて自動調整 */
-        .grid img { 
-            width: 100%; 
-            max-width: 120px; 
-            aspect-ratio: 1/1; 
-            object-fit: cover; 
-            cursor: pointer; 
-            border: 4px solid white; 
-            border-radius: 12px; 
-            display: block; 
-            box-sizing: border-box; 
-            transition: filter 0.3s, border 0.3s; 
-        }
-        
+        body { font-family: sans-serif; text-align: center; background: #fff0f5; padding: 10px; margin: 0; }
+        .container { max-width: 600px; margin: 0 auto; }
+        .grid { display: grid; gap: 10px; justify-content: center; margin: 15px auto; }
         .item-wrapper { display: flex; flex-direction: column; align-items: center; }
+        .grid img { width: 90px; height: 90px; object-fit: cover; cursor: pointer; border: 4px solid white; border-radius: 12px; transition: 0.3s; }
         .grid img.selected { border: 4px solid #ff69b4; }
         .grid img.dimmed { filter: brightness(0.6); }
         .grid img.correct-border { border: 4px solid #44ff44 !important; }
         .grid img.wrong-border { border: 4px solid #ff4444 !important; }
-        
-        .mv-label { font-size: 11px; color: #555; margin-top: 5px; display: none; font-weight: bold; }
-        .mv-area-wrapper { margin: 20px auto; padding-top: 20px; border-top: 3px solid #ffb6c1; display: none; width: 100%; box-sizing: border-box; }
-        
-        button { padding: 10px 20px; font-size: 14px; border-radius: 20px; border: none; background: #ff69b4; color: white; cursor: pointer; margin: 5px; }
-        
+        .mv-label { font-size: 11px; color: #555; margin-top: 5px; font-weight: bold; }
+        #mv-area { border-top: 3px solid #ffb6c1; margin-top: 20px; padding-top: 20px; display: none; }
+        button { padding: 10px 20px; border-radius: 20px; border: none; background: #ff69b4; color: white; cursor: pointer; margin: 5px; }
         #result-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 1000; }
-        #result-content { background: white; padding: 20px; border-radius: 20px; width: 90%; max-width: 400px; box-sizing: border-box; }
-        #res-img { width: 90%; max-width: 450px; margin: 45px auto; display: block; }
+        #result-content { background: white; padding: 20px; border-radius: 20px; width: 80%; max-width: 400px; display: flex; flex-direction: column; align-items: center; }
+        #res-img { width: 40%; margin: 10px; }
     </style>
 </head>
 <body>
@@ -59,7 +30,7 @@
             <button onclick="startGame('normal')">ふつう(12マス)</button>
             <button onclick="startGame('hard')">むずかしい(16マス)</button>
             <hr>
-            <button onclick="startTA()" style="background: #ff4444;">タイムアタック(12マスを5回クリアするタイムを測定します!)</button>
+            <button onclick="startTA()" style="background: #ff4444;">タイムアタック(12マスで5回正解するまでのタイムを測定するよ!)</button>
         </div>
 
         <div id="game-screen" style="display: none;">
@@ -68,15 +39,16 @@
             <div id="grid" class="grid"></div>
             <div id="controls">
                 <button id="hint-btn" onclick="showHint()">ヒント</button>
+                <button id="home-btn" onclick="location.reload()" style="display:none;">ホームに戻る</button>
                 <button id="check-btn" onclick="check()">判定する！</button>
             </div>
-            <div id="after-check-controls" class="mv-area-wrapper">
+            <div id="mv-area">
                 <div id="mv-info"></div>
                 <button onclick="location.reload()">難易度選択に戻る</button>
                 <button onclick="startGame(mode)">もう一度</button>
             </div>
         </div>
-
+    </div>
 
     <div id="result-overlay">
         <div id="result-content">
@@ -87,7 +59,7 @@
     </div>
 
     <script>
-        const imageList = [            { src: 'HEARTRIS/Screenshot_20260707-114848.png', mv: 'HEARTRIS' },
+        const imageList = [{ src: 'HEARTRIS/Screenshot_20260707-114848.png', mv: 'HEARTRIS' },
 { src: 'HEARTRIS/Screenshot_20260707-114855.png', mv: 'HEARTRIS' },
 { src: 'HEARTRIS/Screenshot_20260707-114907.png', mv: 'HEARTRIS' },
 { src: 'HEARTRIS/Screenshot_20260707-114917.png', mv: 'HEARTRIS' },
@@ -228,39 +200,41 @@
 { src: 'Poppin_Shakin/Screenshot_20260708-084450.png', mv: 'Poppin_Shakin' },
 { src: 'Poppin_Shakin/Screenshot_20260708-084525.png', mv: 'Poppin_Shakin' },
 { src: 'Poppin_Shakin/Screenshot_20260708-084534.png', mv: 'Poppin_Shakin' },
-{ src: 'Poppin_Shakin/Screenshot_20260708-084548.png', mv: 'Poppin_Shakin' },]; 
-const mvData = {            'HEARTRIS': { url: 'https://youtu.be/gRfDY9WrGwk', thumb: 'thumbnails/thumb_heartris.jpg' },
+{ src: 'Poppin_Shakin/Screenshot_20260708-084548.png', mv: 'Poppin_Shakin' },];
+        const mvData = {'HEARTRIS': { url: 'https://youtu.be/gRfDY9WrGwk', thumb: 'thumbnails/thumb_heartris.jpg' },
             'Make_you_happy': { url: 'https://youtu.be/QW28YKqdxe0', thumb: 'thumbnails/thumb_myh.jpg' },
             'Too_Bad': { url: 'https://youtu.be/b_GqrwmptWo', thumb: 'thumbnails/thumb_toobad.jpg' },
             'Step_and_a_step': { url: 'https://youtu.be/a6QT0acJFQE', thumb: 'thumbnails/thumb_stepandastep.jpg' },
            'Take_a_picture': { url: 'https://youtu.be/OlHb1qH-zS4', thumb: 'thumbnails/thumb_takeapicture.jpg' },
 'Chopstick': { url: 'https://youtu.be/nCjmXHsRJNY?si=S6BeEpqBHuMw3EqR', thumb: 'thumbnails/thumb_Chopstick.jpg' },
-'Poppin_Shakin': { url: 'https://youtu.be/mgYnKfgx6tI?si=4Qxmha2PFgtb9D77', thumb: 'thumbnails/tumb_Poppin.jpg' }
-};
+'Poppin_Shakin': { url: 'https://youtu.be/mgYnKfgx6tI?si=4Qxmha2PFgtb9D77', thumb: 'thumbnails/tumb_Poppin.jpg' }};
+
         let mode = '', currentTarget = '', taCount = 0, startTime = 0, timerInterval = null;
 
         function getGridCols() {
             if (mode === 'easy') return 2;
-            if (mode === 'hard' || mode === 'ta') return 4;
-            return window.innerWidth >= 600 ? 4 : 3;
+            if (mode === 'normal' || mode === 'ta') return window.innerWidth >= 600 ? 4 : 3;
+            return 4;
+        }
+
+        function startTA() {
+            mode = 'ta'; taCount = 0; startTime = Date.now();
+            document.getElementById('ta-count').innerText = '0';
+            document.getElementById('ta-info').style.display = 'block';
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => document.getElementById('timer').innerText = Math.floor((Date.now() - startTime) / 1000), 1000);
+            startGame('ta');
         }
 
         function startGame(m) {
             mode = m;
             document.getElementById('home-screen').style.display = 'none';
             document.getElementById('game-screen').style.display = 'block';
-            document.getElementById('after-check-controls').style.display = 'none';
+            document.getElementById('mv-area').style.display = 'none';
             document.getElementById('check-btn').style.display = 'inline-block';
             document.getElementById('hint-btn').style.display = (mode === 'ta') ? 'none' : 'inline-block';
+            document.getElementById('home-btn').style.display = (mode === 'ta') ? 'inline-block' : 'none';
             setupRound();
-        }
-
-        function startTA() {
-            mode = 'ta'; taCount = 0;
-            document.getElementById('ta-info').style.display = 'block';
-            startTime = Date.now();
-            timerInterval = setInterval(() => document.getElementById('timer').innerText = Math.floor((Date.now() - startTime) / 1000), 1000);
-            startGame('ta');
         }
 
         function setupRound() {
@@ -268,23 +242,22 @@ const mvData = {            'HEARTRIS': { url: 'https://youtu.be/gRfDY9WrGwk', t
             currentTarget = mvs[Math.floor(Math.random() * mvs.length)];
             const cols = getGridCols();
             const total = (mode === 'easy' ? 4 : (mode === 'normal' || mode === 'ta' ? 12 : 16));
-            
             const limits = { 'easy': [1,2], 'normal': [5,8], 'hard': [7,10], 'ta': [5,8] };
             const [min, max] = limits[mode];
-            const corrects = imageList.filter(i => i.mv === currentTarget);
-            const others = imageList.filter(i => i.mv !== currentTarget);
+            const corrects = imageList.filter(i => i.mv === currentTarget).sort(()=>0.5-Math.random());
+            const others = imageList.filter(i => i.mv !== currentTarget).sort(()=>0.5-Math.random());
             const cCount = Math.min(Math.floor(Math.random() * (max - min + 1)) + min, corrects.length);
-            const gameData = [...corrects.sort(()=>0.5-Math.random()).slice(0, cCount), ...others.sort(()=>0.5-Math.random()).slice(0, total - cCount)].sort(()=>0.5-Math.random());
+            const gameData = [...corrects.slice(0, cCount), ...others.slice(0, total - cCount)].sort(()=>0.5-Math.random());
 
             const grid = document.getElementById('grid');
             grid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
             grid.innerHTML = '';
-            document.getElementById('q-text').innerText = `${currentTarget} のシーンを全てを選んでね！`;
+            document.getElementById('q-text').innerText = `${currentTarget} のシーンを全て選んでね！`;
             
             gameData.forEach(img => {
                 const div = document.createElement('div');
                 div.className = 'item-wrapper';
-                div.innerHTML = `<img src="${img.src}" onclick="this.classList.toggle('selected')" data-mv="${img.mv}"><div class="mv-label">${img.mv}</div>`;
+                div.innerHTML = `<img src="${img.src}" onclick="this.classList.toggle('selected')" data-mv="${img.mv}"><div class="mv-label" style="display:none;">${img.mv}</div>`;
                 grid.appendChild(div);
             });
         }
@@ -295,11 +268,8 @@ const mvData = {            'HEARTRIS': { url: 'https://youtu.be/gRfDY9WrGwk', t
                 const isSelected = img.classList.contains('selected');
                 const isCorrect = img.dataset.mv === currentTarget;
                 if ((isSelected && !isCorrect) || (!isSelected && isCorrect)) allCorrect = false;
-                
                 if (mode !== 'ta') {
-                    // 【修正点】選択した画像だけにdimmedを適用
                     if (isSelected) img.classList.add('dimmed');
-                    
                     if (isCorrect) img.classList.add('correct-border');
                     else if (isSelected) img.classList.add('wrong-border');
                 }
@@ -316,24 +286,25 @@ const mvData = {            'HEARTRIS': { url: 'https://youtu.be/gRfDY9WrGwk', t
                     document.getElementById('msg').innerText = allCorrect ? "正解！" : "不正解...";
                     document.getElementById('res-img').src = allCorrect ? 'result/correct.png' : 'result/wrong.png';
                 }
-                document.getElementById('result-overlay').style.display = 'flex';
             } else {
                 document.getElementById('msg').innerText = allCorrect ? "大正解！あなたは真のWithUです！！" : "残念！WithUの底力、こんなもんじゃないですよね？";
                 document.getElementById('res-img').src = allCorrect ? 'result/correct.png' : 'result/wrong.png';
-                document.getElementById('result-overlay').style.display = 'flex';
                 document.querySelectorAll('.mv-label').forEach(el => el.style.display = 'block');
-                document.getElementById('mv-info').innerHTML = `<h3>↓ ${currentTarget} のMVはこちら！！ ↓</h3><a href="${mvData[currentTarget].url}" target="_blank"><img src="${mvData[currentTarget].thumb}" style="width:100%; max-width:300px; border-radius:15px; box-shadow:0 4px 8px rgba(0,0,0,0.2);"></a>`;
-                document.getElementById('after-check-controls').style.display = 'block';
+                document.getElementById('mv-info').innerHTML = `<h3>↓ ${currentTarget} のMVはこちら！！ ↓</h3><a href="${mvData[currentTarget].url}" target="_blank"><img src="${mvData[currentTarget].thumb}" style="width:100%; max-width:200px;"></a>`;
+                document.getElementById('mv-area').style.display = 'block';
                 document.getElementById('check-btn').style.display = 'none';
+                document.getElementById('hint-btn').style.display = 'none';
             }
+            document.getElementById('result-overlay').style.display = 'flex';
         }
 
-        function showHint() { alert(`今回の正解は ${document.querySelectorAll('.grid img[data-mv="' + currentTarget + '"]').length} 枚です！`); }
         function closeResult() {
             document.getElementById('result-overlay').style.display = 'none';
-            if (mode === 'ta' && taCount >= 5) location.reload();
-            else if (mode === 'ta') setupRound();
+            if (mode === 'ta' && taCount < 5) setupRound();
+            else if (mode === 'ta') location.reload();
         }
+        
+        function showHint() { alert(`今回の正解は ${document.querySelectorAll('.grid img[data-mv="' + currentTarget + '"]').length} 枚です！`); }
     </script>
 </body>
 </html>
