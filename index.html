@@ -302,7 +302,8 @@
             const isFast = finalTime <= 60;
             const comment = isFast ? "すごい生粋のWithUだ！！" : "まだ上を目指せるんじゃない？";
             document.getElementById('msg').innerText = `${nickname}さんの結果は ${finalTime}秒！！\n(${now})\n\n${comment}`;
-          const resultImg = isFast ? 'result/correct_fast.png' : 'result/correct_normal.png';
+       const resultImg = isFast ? 'result/best.png' : 'result/bad.png';
+            document.getElementById('res-img').src = resultImg;
             
             const snsArea = document.getElementById('sns-area');
             snsArea.style.display = 'block';
