@@ -512,7 +512,7 @@
             const isFast = finalTime <= 60;
             const comment = isFast ? "すごい生粋のWithUだ！！" : "まだ上を目指せるんじゃない？";
             document.getElementById('msg').innerText = `${nickname}さんの結果は ${finalTime}秒！！\n(${now})\n\n${comment}`;
-       const resultImg = isFast ? 'result/best.png' : 'result/bad.png';
+       const resultImg = isFast ? 'result/best.PNG' : 'result/bad.PNG';
             document.getElementById('res-img').src = resultImg;
             
             const snsArea = document.getElementById('sns-area');
