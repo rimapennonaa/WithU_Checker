@@ -1,13 +1,9 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta property="og:title" content="WithUチェッカー">
-<meta property="og:description" content="WithU度をチェックしよう！">
-<meta property="og:image" content="https://rimapennonaa.github.io/WithU_Checker//share/Snapshot_138.png">
-<meta property="og:url" content="https://rimapennonaa.github.io/WithU_Checker/">
-<meta name="twitter:card" content="summary_large_image">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <title>WithUチェッカー</title>
     <style>
         #msg { white-space: pre-wrap; }
@@ -24,8 +20,8 @@
         #mv-area { border-top: 6px solid #ffb6c1; margin-top: 20px; padding-top: 20px; display: none; }
         button { padding: 10px 20px; border-radius: 20px; border: none; background: #ff69b4; color: white; cursor: pointer; margin: 5px; }
         #result-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 1000; }
-        #result-content { background: white; padding: 20px; border-radius: 20px; width: 80%; max-width: 400px; display: flex; flex-direction: column; align-items: center; }
-        #res-img { width: 100%; margin: 10px; }
+        #result-content { background: white; padding: 20px; border-radius: 20px; width: 90%; max-width: 400px; display: flex; flex-direction: column; align-items: center; }
+        #res-img { width: 100%; display: block; }
     </style>
 </head>
 <body>
@@ -62,15 +58,26 @@
 
     <div id="result-overlay">
         <div id="result-content">
+            <div id="capture-area" style="position: relative; width: 100%; margin-bottom: 10px;">
+                <img id="res-img" src="">
+                <div id="text-overlay" style="position: absolute; top: 10px; left: 10px; color: white; text-shadow: 2px 2px 4px #000; font-weight: bold; text-align: left;">
+                    <div id="res-nickname" style="font-size: 1.2em;"></div>
+                    <div id="res-time" style="font-size: 1.5em; color: #ffeb3b;"></div>
+                </div>
+            </div>
+            
             <h2 id="msg"></h2>
-            <img id="res-img" src="">
-            <div id="sns-area" style="display:none;"></div>
+            
+            <div id="action-buttons" style="display:none;">
+                <button id="save-btn" onclick="downloadResult()" style="background:#44cc44;">結果画像を保存</button>
+                <button id="share-btn" onclick="shareToX()" style="background:#000;">Xでシェアする</button>
+            </div>
             <button onclick="closeResult()">閉じる</button>
         </div>
     </div>
 
     <script>
-        const imageList = [{ src: 'HEARTRIS/Screenshot_20260707-114848.png', mv: 'HEARTRIS' },
+      const imageList = [{ src: 'HEARTRIS/Screenshot_20260707-114848.png', mv: 'HEARTRIS' },
 { src: 'HEARTRIS/Screenshot_20260707-114855.png', mv: 'HEARTRIS' },
 { src: 'HEARTRIS/Screenshot_20260707-114907.png', mv: 'HEARTRIS' },
 { src: 'HEARTRIS/Screenshot_20260707-114917.png', mv: 'HEARTRIS' },
@@ -429,7 +436,6 @@
 'LOVE_LINE': { url: 'https://youtu.be/RkPj6AnKm0Y?si=Adj_VXkuH8R1WFJM', thumb: 'thumbnails/thumb_Loveline.jpg' },
 'LOVE_Emotion': { url: 'https://youtu.be/1brvTNG4Caw?si=XYH9MXWzNxmOlkgO', thumb: 'thumbnails/thumb_Loveemo.jpg' },
 };
-
         let mode = '', currentTarget = '', taCount = 0, startTime = 0, timerInterval = null, nickname = '';
 
         function getGridCols() {
@@ -460,87 +466,84 @@
         }
 
         function setupRound() {
-    const mvs = Object.keys(mvData);
-    currentTarget = mvs[Math.floor(Math.random() * mvs.length)];
-    
-    // 1. 重複を除去したユニークな画像リストを作成
-    const uniqueImages = [...new Map(imageList.map(item => [item.src, item])).values()];
-    
-    // 2. ユニークなリストから分類とシャッフルを行う
-    const corrects = uniqueImages.filter(i => i.mv === currentTarget).sort(() => 0.5 - Math.random());
-    const others = uniqueImages.filter(i => i.mv !== currentTarget).sort(() => 0.5 - Math.random());
-    
-    const cols = getGridCols();
-    const total = (mode === 'easy' ? 4 : (mode === 'normal' || mode === 'ta' ? 12 : 16));
-    const limits = { 'easy': [1,2], 'normal': [5,8], 'hard': [7,10], 'ta': [5,8] };
-    const [min, max] = limits[mode];
-    
-    // 3. 正解数を決定し、データを生成
-    const cCount = Math.min(Math.floor(Math.random() * (max - min + 1)) + min, corrects.length);
-    const gameData = [...corrects.slice(0, cCount), ...others.slice(0, total - cCount)].sort(() => 0.5 - Math.random());
+            const mvs = Object.keys(mvData);
+            currentTarget = mvs[Math.floor(Math.random() * mvs.length)];
+            const uniqueImages = [...new Map(imageList.map(item => [item.src, item])).values()];
+            const corrects = uniqueImages.filter(i => i.mv === currentTarget).sort(() => 0.5 - Math.random());
+            const others = uniqueImages.filter(i => i.mv !== currentTarget).sort(() => 0.5 - Math.random());
+            const cols = getGridCols();
+            const total = (mode === 'easy' ? 4 : (mode === 'normal' || mode === 'ta' ? 12 : 16));
+            const limits = { 'easy': [1,2], 'normal': [5,8], 'hard': [7,10], 'ta': [5,8] };
+            const [min, max] = limits[mode];
+            const cCount = Math.min(Math.floor(Math.random() * (max - min + 1)) + min, corrects.length);
+            const gameData = [...corrects.slice(0, cCount), ...others.slice(0, total - cCount)].sort(() => 0.5 - Math.random());
 
-    const grid = document.getElementById('grid');
-    grid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
-    grid.innerHTML = '';
-    document.getElementById('q-text').innerText = `${currentTarget} のシーンを全て選んでね！`;
-    
-    gameData.forEach(img => {
-        const div = document.createElement('div');
-        div.className = 'item-wrapper';
-        div.innerHTML = `<img src="${img.src}" onclick="this.classList.toggle('selected')" data-mv="${img.mv}"><div class="mv-label" style="display:none;">${img.mv}</div>`;
-        grid.appendChild(div);
-    });
-        }
-
-       function check() {
-    let allCorrect = true;
-    document.querySelectorAll('.grid img').forEach(img => {
-        const isSelected = img.classList.contains('selected');
-        const isCorrect = img.dataset.mv === currentTarget;
-        if ((isSelected && !isCorrect) || (!isSelected && isCorrect)) allCorrect = false;
-        if (mode !== 'ta') {
-            if (isSelected) img.classList.add('dimmed');
-            if (isCorrect) img.classList.add('correct-border');
-            else if (isSelected) img.classList.add('wrong-border');
-        }
-    });
-
-    document.getElementById('sns-area').style.display = 'none';
-    if (mode === 'ta') {
-        if (allCorrect) taCount++;
-        document.getElementById('ta-count').innerText = taCount;
-        
-        if (taCount >= 5) {
-            clearInterval(timerInterval);
-            const finalTime = document.getElementById('timer').innerText;
-            const now = new Date().toLocaleString();
-            const isFast = finalTime <= 60;
-            const comment = isFast ? "すごい生粋のWithUだ！！" : "まだ上を目指せるんじゃない？";
-            document.getElementById('msg').innerText = `${nickname}さんの結果は ${finalTime}秒！！\n(${now})\n\n${comment}`;
-       const resultImg = isFast ? 'result/best.PNG' : 'result/bad.PNG';
-            document.getElementById('res-img').src = resultImg;
+            const grid = document.getElementById('grid');
+            grid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+            grid.innerHTML = '';
+            document.getElementById('q-text').innerText = `${currentTarget} のシーンを全て選んでね！`;
             
-            const snsArea = document.getElementById('sns-area');
-            snsArea.style.display = 'block';
-            const shareText = encodeURIComponent(`${nickname}のWithUチェッカーのタイムは ${finalTime}秒！ ${comment} #NiziU #WithU https://rimapennonaa.github.io/WithU_Checker/`);
-            snsArea.innerHTML = `<button style="background:#000;" onclick="window.open('https://twitter.com/intent/tweet?text=${shareText}')">Xでシェアする</button>`;
-        } else {
-            // 【ここが修正箇所です】
-            document.getElementById('msg').innerText = (allCorrect ? "正解！" : "不正解...") + `\n\n現在の正解数: ${taCount}/5`;
-            document.getElementById('res-img').src = allCorrect ? 'result/seikai.png' : 'result/zannen.png';
+            gameData.forEach(img => {
+                const div = document.createElement('div');
+                div.className = 'item-wrapper';
+                div.innerHTML = `<img src="${img.src}" onclick="this.classList.toggle('selected')" data-mv="${img.mv}"><div class="mv-label" style="display:none;">${img.mv}</div>`;
+                grid.appendChild(div);
+            });
         }
-    } else {
-        // 通常プレイの判定表示
-        document.getElementById('msg').innerText = allCorrect ? "大正解！\nあなたは真のWithUです！！" : "残念！ WithUの底力、\nこんなもんじゃないですよね？";
-        document.getElementById('res-img').src = allCorrect ? 'result/correct.png' : 'result/wrong.png';
-        document.querySelectorAll('.mv-label').forEach(el => el.style.display = 'block');
-        document.getElementById('mv-info').innerHTML = `<h3>↓ ${currentTarget} のMVはこちら！！ ↓</h3><a href="${mvData[currentTarget].url}" target="_blank"><img src="${mvData[currentTarget].thumb}" style="width:100%; max-width:500px;"></a>`;
-        document.getElementById('mv-area').style.display = 'block';
-        document.getElementById('check-btn').style.display = 'none';
-        document.getElementById('hint-btn').style.display = 'none';
-    }
-    document.getElementById('result-overlay').style.display = 'flex';
-}
+
+function check() {
+            let allCorrect = true;
+            document.querySelectorAll('.grid img').forEach(img => {
+                const isSelected = img.classList.contains('selected');
+                const isCorrect = img.dataset.mv === currentTarget;
+                if ((isSelected && !isCorrect) || (!isSelected && isCorrect)) allCorrect = false});
+              if (mode === 'ta') {
+                if (allCorrect) taCount++;
+                document.getElementById('ta-count').innerText = taCount;
+                
+                if (taCount >= 5) {
+                    clearInterval(timerInterval);
+                    const finalTime = document.getElementById('timer').innerText;
+                    document.getElementById('res-nickname').innerText = nickname;
+                    document.getElementById('res-time').innerText = finalTime + "秒";
+                    document.getElementById('msg').innerText = finalTime <= 60 ? "すごい生粋のWithUだ！！" : "まだ上を目指せるんじゃない？";
+                    document.getElementById('res-img').src = finalTime <= 60 ? 'result/best.PNG' : 'result/bad.PNG';
+                    document.getElementById('action-buttons').style.display = 'block';
+                } else {
+                    document.getElementById('res-nickname').innerText = '';
+                    document.getElementById('res-time').innerText = '';
+                    document.getElementById('msg').innerText = (allCorrect ? "正解！" : "不正解...") + `\n\n現在の正解数: ${taCount}/5`;
+                    document.getElementById('res-img').src = allCorrect ? 'result/seikai.png' : 'result/zannen.png';
+                }
+            } else {
+                                   document.getElementById('msg').innerText = allCorrect ? "大正解！\nあなたは真のWithUです！！" : "残念！ WithUの底力、\nこんなもんじゃないですよね？";
+                document.getElementById('res-img').src = allCorrect ? 'result/correct.png' : 'result/wrong.png';
+                document.querySelectorAll('.mv-label').forEach(el => el.style.display = 'block');
+                document.getElementById('mv-info').innerHTML = `<h3>↓ ${currentTarget} のMVはこちら！！ ↓</h3><a href="${mvData[currentTarget].url}" target="_blank"><img src="${mvData[currentTarget].thumb}" style="width:100%; max-width:500px;"></a>`;
+                document.getElementById('mv-area').style.display = 'block';
+                document.getElementById('check-btn').style.display = 'none';
+                document.getElementById('hint-btn').style.display = 'none';
+      }
+            document.getElementById('result-overlay').style.display = 'flex';
+        }
+
+        function downloadResult() {
+            const btns = document.getElementById('action-buttons');
+            btns.style.display = 'none'; // キャプチャ時はボタンを隠す
+            html2canvas(document.querySelector("#capture-area")).then(canvas => {
+                const link = document.createElement("a");
+                link.href = canvas.toDataURL("image/png");
+                link.download = `${nickname}_WithU_Result.png`;
+                link.click();
+                btns.style.display = 'block';
+            });
+        }
+
+        function shareToX() {
+            const finalTime = document.getElementById('timer').innerText;
+            const shareText = encodeURIComponent(`${nickname}のWithUチェッカー記録: ${finalTime}秒！ #NiziU #WithU https://rimapennonaa.github.io/WithU_Checker/`);
+            window.open('https://twitter.com/intent/tweet?text=' + shareText);
+        }
 
         function closeResult() {
             document.getElementById('result-overlay').style.display = 'none';
