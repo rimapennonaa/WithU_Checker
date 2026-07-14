@@ -1,6 +1,11 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
+<meta property="og:title" content="WithUチェッカー">
+<meta property="og:description" content="WithU度をチェックしよう！">
+<meta property="og:image" content="https://rimapennonaa.github.io/WithU_Checker//share/Snapshot_138.png">
+<meta property="og:url" content="https://rimapennonaa.github.io/WithU_Checker/">
+<meta name="twitter:card" content="summary_large_image">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>WithUチェッカー</title>
@@ -477,7 +482,7 @@
     const grid = document.getElementById('grid');
     grid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
     grid.innerHTML = '';
-    document.getElementById('q-text').innerText = `${currentTarget} のMVのシーンを全て選んでね！`;
+    document.getElementById('q-text').innerText = `${currentTarget} のシーンを全て選んでね！`;
     
     gameData.forEach(img => {
         const div = document.createElement('div');
